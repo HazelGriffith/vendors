@@ -58,11 +58,11 @@ namespace cadmium::vendor_Space {
 
 		int stock;
 		int money_received;
-		bool request_stock;
+		int products_requested;
 		bool vendor_or_customer;
 
 		// Set the default values for the state constructor for this specific model
-		VendorState(): sigma(0), stock(0), money_received(0), request_stock(false), vendor_or_customer(false){};
+		VendorState(): sigma(0), ___current_state___(Vendor_States::Idle), stock(0), money_received(0), products_requested(0), vendor_or_customer(false){};
 	};
 
 	std::ostream& operator<<(std::ostream &out, const VendorState& state) {
@@ -70,10 +70,11 @@ namespace cadmium::vendor_Space {
     	out << "[-|state|-]" << enumToString(state.___current_state___) << "[-|state|-]";
     	out << "[-|sigma|-]" << state.sigma << "[-|sigma|-]";
     	out << "[-|~:stock:~|-]" << state.stock << "[-|~:stock:~|-]";
+		out << "[-|~:products_requested:~|-]" << state.products_requested << "[-|~:products_requested:~|-]";
     	out << "[-|~:money_received:~|-]" << state.money_received << "[-|~:money_received:~|-]";
-		out << "[-|~:request_stock:~|-]" << state.request_stock << "[-|~:request_stock:~|-]";
+		out << "[-|~:vendor_or_customer~|-]" << state.vendor_or_customer << "[-|~:vendor_or_customer:~|-]";
 
-    return out;
+    	return out;
 	}
 
 	// Atomic model of Vendor
@@ -95,7 +96,7 @@ namespace cadmium::vendor_Space {
 
 			// Declare variables for the model's behaviour
 			int check_stock = 5;
-			int cost = 2;
+			int cost = 1;
 
 			/**
 			 * Constructor function for this atomic model, and its respective state object.
@@ -155,9 +156,6 @@ namespace cadmium::vendor_Space {
 						// DEADLOCK
 						break;
 					case Vendor_States::Checking_Stock:
-						if (state.stock <= check_stock){
-							state.request_stock = true;
-						}
 						state.___current_state___ = Vendor_States::Idle;
 						state.sigma = numeric_limits<double>::infinity();
 						break;
@@ -173,7 +171,7 @@ namespace cadmium::vendor_Space {
 						// Passive
 						break;
 					case Vendor_States::Requesting_Money:
-						// Passive
+						// sends request for money to customer after they requested a product
 						break;
 					default:
 						assert(("Not a valid state", false));
@@ -205,6 +203,12 @@ namespace cadmium::vendor_Space {
 						// The variable x is created to handle the external input values in sequence.
 						// The getBag() function is used to get the next input value.
 						for( const auto x : Customer_Request->getBag()){
+							if (x > 0){
+								state.products_requested = x;
+							} else {
+								assert(("Must be greater than 0 products requested", false));
+							}
+							state.___current_state___ = Vendor_States::Requesting_Money;
 						}
 
 					}
@@ -215,7 +219,12 @@ namespace cadmium::vendor_Space {
 						// The variable x is created to handle the external input values in sequence.
 						// The getBag() function is used to get the next input value.
 						for( const auto x : Vendor_Request->getBag()){
-
+							if (x > 0){
+								state.products_requested = x;
+							} else {
+								assert(("Must be greater than 0 products requested", false));
+							}
+							state.___current_state___ = Vendor_States::Sending_Product;
 						}
 
 					}
@@ -233,6 +242,7 @@ namespace cadmium::vendor_Space {
 							} else {
 								assert(("Must be greater than 0 dollars received", false));
 							}
+							state.___current_state___ = Vendor_States::Checking_Money;
 						}
 
 					}
@@ -286,7 +296,7 @@ namespace cadmium::vendor_Space {
 						}
 						break;
 					case Vendor_States::Requesting_Money:
-						Message_Customer->addMessage("More Money Please");
+						Message_Customer->addMessage("More Money Required");
 						break;
 					default:
 						assert(("Not a valid state", false));
@@ -306,5 +316,5 @@ namespace cadmium::vendor_Space {
 				return state.sigma;
 			}
 	};
-	#endif // __VENDOR_HPP__
-}
+};
+#endif // __VENDOR_HPP__
