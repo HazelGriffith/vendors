@@ -4,9 +4,9 @@
 #include <iostream>
 #include <string>
 
-#include "include/coupled models/top_model.hpp"
+#include "include/coupled_models/top_model.hpp"
 
-using namespace cadmium::SimpleHelo;
+using namespace cadmium::vendor_Space;
 
 int main(int argc,char* argv[]){
 

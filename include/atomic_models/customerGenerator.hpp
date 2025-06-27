@@ -65,8 +65,10 @@ namespace cadmium::vendor_Space {
 
 			// Declare ports for the model
 
-			Port<string> Vendor_Message;
+			Port<int> Vendor_Message;
         	Port<int> Product_Received;
+
+			Port<int> Purchase_Request;
         	Port<int> Money_Sent;
 
 			// Declare variables for the model's behaviour
@@ -79,12 +81,13 @@ namespace cadmium::vendor_Space {
 			 *
 			 * @param id ID of the new Customer model object, will be used to identify results on the output file
 			 */
-			Customer(const string& id, int initial_stock): Atomic<CustomerState>(id, CustomerState()) {
+			Customer(const string& id): Atomic<CustomerState>(id, CustomerState()) {
 
 				// Initialize ports for the model
-				Vendor_Message = addInPort<string>("Vendor_Message");
+				Vendor_Message = addInPort<int>("Vendor_Message");
 				Product_Received = addInPort<int>("Product_Received");
 
+				Purchase_Request = addOutPort<int>("Purchase_Request");
 				Money_Sent = addOutPort<int>("Money_Sent");
 
 				// Initialize variables for the model's behaviour
@@ -103,16 +106,19 @@ namespace cadmium::vendor_Space {
 			 * @param state reference to the current state of the model.
 			 */
 			void internalTransition(CustomerState& state) const override {
-				state.sigma = 5;
+				
 				switch(state.___current_state___){
 					case Customer_States::Sending_Request:
-					// DOES NOT TRANSITION
+						state.sigma = 5;
+						// DOES NOT TRANSITION
 						break;
 					case Customer_States::Acknowledged:
 						state.___current_state___ = Customer_States::Send_Money;
+						state.sigma = 0;
 						break;
 					case Customer_States::Send_Money:
-					// DOES NOT TRANSITION
+						state.sigma = numeric_limits<double>::infinity();
+						// DOES NOT TRANSITION
 						break;
 					default:
 						assert(("Not a valid state", false));
@@ -143,13 +149,27 @@ namespace cadmium::vendor_Space {
 					// The variable x is created to handle the external input values in sequence.
 					// The getBag() function is used to get the next input value.
 					for( const auto x : Vendor_Message->getBag()){
-						string msg_received = x;
-						if (msg_received.compare("More Money Required") == 0){
-
-						} else if (msg_received.compare("Enough Money Received") == 0){
-
+						int dollars = x;
+						if (dollars == 0){
+							// Enough money received
+							state.___current_state___ = Customer_States::Sending_Request;
+							
+						} else if (dollars > 0){
+							// More money needed
+							state.___current_state___ = Customer_States::Acknowledged;
+						} else {
+							assert(("Cannot give negative money", false));
 						}
-						
+						state.sigma = 0;
+					}
+				}
+
+				if(!Product_Received->empty()){
+
+					// The variable x is created to handle the external input values in sequence.
+					// The getBag() function is used to get the next input value.
+					for( const auto x : Product_Received->getBag()){
+						state.product_bought+=x;
 					}
 				}
 
@@ -166,27 +186,14 @@ namespace cadmium::vendor_Space {
 			 */
 			void output(const CustomerState& state) const override {
 				switch(state.___current_state___){
-					case Customer_States::Checking_Money:
+					case Customer_States::Sending_Request:
+						Purchase_Request->addMessage(1);
 						break;
-					case Customer_States::Vending:
-						Message_Customer->addMessage("Enough Money Received");
+					case Customer_States::Acknowledged:
+						
 						break;
-					case Customer_States::Checking_Stock:
-						if (state.Customer_or_customer){
-							Product_to_Customer->addMessage(1);
-						} else {
-							Product_to_Customer->addMessage(1);
-						}
-						break;
-					case Customer_States::Sending_Product:
-						break;
-					case Customer_States::Idle:
-						if (state.stock <= check_stock){
-							Message_Customer->addMessage("Please Send Products");
-						}
-						break;
-					case Customer_States::Requesting_Money:
-						Message_Customer->addMessage("More Money Please");
+					case Customer_States::Send_Money:
+						Money_Sent->addMessage(1);
 						break;
 					default:
 						assert(("Not a valid state", false));

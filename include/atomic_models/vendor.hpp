@@ -89,8 +89,8 @@ namespace cadmium::vendor_Space {
         	Port<int> Vendor_Request;
         	Port<int> Money_Input;
 			Port<int> Product_Input;
-        	Port<string> Message_Customer;
-       	 	Port<string> Message_Vendor;
+        	Port<int> Message_Customer;
+       	 	Port<int> Message_Vendor;
        	 	Port<int> Product_to_Customer;
         	Port<int> Product_to_Vendor;
 
@@ -113,8 +113,8 @@ namespace cadmium::vendor_Space {
 				Vendor_Request = addInPort<int>("Vendor_Request");
 				Money_Input = addInPort<int>("Money_Input");
 				Product_Input = addInPort<int>("Product_Input");
-				Message_Customer = addOutPort<string>("Message_Customer");
-				Message_Vendor = addOutPort<string>("Message_Vendor");
+				Message_Customer = addOutPort<int>("Message_Customer");
+				Message_Vendor = addOutPort<int>("Message_Vendor");
 				Product_to_Customer = addOutPort<int>("Product_to_Customer");
 				Product_to_Vendor = addOutPort<int>("Product_to_Vendor");
 
@@ -209,6 +209,7 @@ namespace cadmium::vendor_Space {
 								assert(("Must be greater than 0 products requested", false));
 							}
 							state.___current_state___ = Vendor_States::Requesting_Money;
+							state.sigma = 0;
 						}
 
 					}
@@ -225,6 +226,7 @@ namespace cadmium::vendor_Space {
 								assert(("Must be greater than 0 products requested", false));
 							}
 							state.___current_state___ = Vendor_States::Sending_Product;
+							state.sigma = 0;
 						}
 
 					}
@@ -279,7 +281,7 @@ namespace cadmium::vendor_Space {
 					case Vendor_States::Checking_Money:
 						break;
 					case Vendor_States::Vending:
-						Message_Customer->addMessage("Enough Money Received");
+						Message_Customer->addMessage(1);
 						break;
 					case Vendor_States::Checking_Stock:
 						if (state.vendor_or_customer){
@@ -292,11 +294,11 @@ namespace cadmium::vendor_Space {
 						break;
 					case Vendor_States::Idle:
 						if (state.stock <= check_stock){
-							Message_Vendor->addMessage("Please Send Products");
+							Message_Vendor->addMessage(1);
 						}
 						break;
 					case Vendor_States::Requesting_Money:
-						Message_Customer->addMessage("More Money Required");
+						Message_Customer->addMessage(cost-state.money_received);
 						break;
 					default:
 						assert(("Not a valid state", false));

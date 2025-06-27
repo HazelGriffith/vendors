@@ -10,7 +10,8 @@
 #include <cassert>
 
 // We include any models that are directly contained within this coupled model
-#include "../atomic_models/vendor.hpp"
+#include "VCCoupledModel.hpp"
+
 // data structures
 
 using namespace std;
@@ -21,27 +22,9 @@ namespace cadmium::vendor_Space {
         Top_model(const std::string& id): Coupled(id){
 
 			// Declare the models
-
-
-			shared_ptr<Vendor> vendor = addComponent<Vendor>("vendor", 10);
+			shared_ptr<VCCoupled> VC = addComponent<VCCoupled>("vendor", 10);
+			
             // Connect the models with coupling
-			
-
-
-			for (int i = 0; i < evacueeCoupledModels.size(); i++){
-				for (int j = 0; j < heloCoupledModels.size(); j++){
-					addCoupling(heloCoupledModels[j]->outEvac,evacueeCoupledModels[i]->in);
-					addCoupling(evacueeCoupledModels[i]->outHelo,heloCoupledModels[j]->inEvac);
-				}
-				addCoupling(evacueeCoupledModels[i]->outFOL,fol->in);
-				addCoupling(evacueeCoupledModels[i]->outES,evacuationSite->inEvac);
-				addCoupling(evacuationSite->outEvac,evacueeCoupledModels[i]->in);
-			}
-			
-			for (int i = 0; i < heloCoupledModels.size(); i++){
-				addCoupling(heloCoupledModels[i]->outES,evacuationSite->inHelo);
-				addCoupling(evacuationSite->outHelo,heloCoupledModels[i]->inES);
-			}
 			
         }
     };
