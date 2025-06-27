@@ -10,13 +10,8 @@
 #include <cassert>
 
 // We include any models that are directly contained within this coupled model
-#include "../atomic_models/filterES.hpp"
-#include "../atomic_models/filterEvac.hpp"
-#include "../atomic_models/helicopter.hpp"
 
 // data structures
-#include "../heloInfo.hpp"
-#include "../evacInfo.hpp"
 
 using namespace std;
 
