@@ -135,7 +135,7 @@ namespace cadmium::vendor_Space {
 			 * @param state reference to the current state of the model.
 			 */
 			void internalTransition(VendorState& state) const override {
-				state.sigma = 0;
+				state.sigma = 1;
 				switch(state.___current_state___){
 					case Vendor_States::Checking_Money:
 						if (state.money_received < cost){
@@ -171,6 +171,7 @@ namespace cadmium::vendor_Space {
 						// Passive
 						break;
 					case Vendor_States::Requesting_Money:
+						state.sigma = numeric_limits<double>::infinity();
 						// sends request for money to customer after they requested a product
 						break;
 					default:
@@ -209,7 +210,7 @@ namespace cadmium::vendor_Space {
 								assert(("Must be greater than 0 products requested", false));
 							}
 							state.___current_state___ = Vendor_States::Requesting_Money;
-							state.sigma = 0;
+							state.sigma = 1;
 						}
 
 					}
@@ -226,7 +227,7 @@ namespace cadmium::vendor_Space {
 								assert(("Must be greater than 0 products requested", false));
 							}
 							state.___current_state___ = Vendor_States::Sending_Product;
-							state.sigma = 0;
+							state.sigma = 1;
 						}
 
 					}
@@ -245,6 +246,7 @@ namespace cadmium::vendor_Space {
 								assert(("Must be greater than 0 dollars received", false));
 							}
 							state.___current_state___ = Vendor_States::Checking_Money;
+							state.sigma = 1;
 						}
 
 					}
@@ -281,7 +283,7 @@ namespace cadmium::vendor_Space {
 					case Vendor_States::Checking_Money:
 						break;
 					case Vendor_States::Vending:
-						Message_Customer->addMessage(1);
+						Message_Customer->addMessage(0);
 						break;
 					case Vendor_States::Checking_Stock:
 						if (state.vendor_or_customer){

@@ -44,9 +44,10 @@ namespace cadmium::vendor_Space {
 		Customer_States ___current_state___;
 
 		int product_bought;
+		int must_pay;
 
 		// Set the default values for the state constructor for this specific model
-		CustomerState(): sigma(0), ___current_state___(Customer_States::Sending_Request), product_bought(0){};
+		CustomerState(): sigma(0), ___current_state___(Customer_States::Sending_Request), product_bought(0), must_pay(0){};
 	};
 
 	std::ostream& operator<<(std::ostream &out, const CustomerState& state) {
@@ -114,7 +115,7 @@ namespace cadmium::vendor_Space {
 						break;
 					case Customer_States::Acknowledged:
 						state.___current_state___ = Customer_States::Send_Money;
-						state.sigma = 0;
+						state.sigma = 1;
 						break;
 					case Customer_States::Send_Money:
 						state.sigma = numeric_limits<double>::infinity();
@@ -149,18 +150,18 @@ namespace cadmium::vendor_Space {
 					// The variable x is created to handle the external input values in sequence.
 					// The getBag() function is used to get the next input value.
 					for( const auto x : Vendor_Message->getBag()){
-						int dollars = x;
-						if (dollars == 0){
+						state.must_pay = x;
+						if (state.must_pay == 0){
 							// Enough money received
 							state.___current_state___ = Customer_States::Sending_Request;
 							
-						} else if (dollars > 0){
+						} else if (state.must_pay > 0){
 							// More money needed
 							state.___current_state___ = Customer_States::Acknowledged;
 						} else {
 							assert(("Cannot give negative money", false));
 						}
-						state.sigma = 0;
+						state.sigma = 1;
 					}
 				}
 
@@ -190,10 +191,13 @@ namespace cadmium::vendor_Space {
 						Purchase_Request->addMessage(1);
 						break;
 					case Customer_States::Acknowledged:
-						
 						break;
 					case Customer_States::Send_Money:
-						Money_Sent->addMessage(1);
+						if (state.must_pay > 0){
+							Money_Sent->addMessage(state.must_pay);
+						} else if (state.must_pay < 0){
+							assert(("Cannot give negative money", false));
+						}
 						break;
 					default:
 						assert(("Not a valid state", false));

@@ -22,7 +22,7 @@ namespace cadmium::vendor_Space {
         Top_model(const std::string& id): Coupled(id){
 
 			// Declare the models
-			shared_ptr<VCCoupled> VC = addComponent<VCCoupled>("vendor", 10);
+			shared_ptr<VCCoupled> VC = addComponent<VCCoupled>("vendor", 1, 10);
 			
             // Connect the models with coupling
 			
