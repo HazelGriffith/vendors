@@ -61,16 +61,16 @@ namespace cadmium::vendor_Space {
 			addIC(customerName, "Money_Sent", vendorName, "Money_Input");
 			
 			// Connect the inputs of the coupled model with the inputs of some atomic model
-			addEIC("inVendorReq1", vendorName, "Vendor_Request");
-			addEIC("inVendorReq2", vendorName, "Vendor_Request");
+			addEIC("inVendorReq1", vendorName, "Vendor_Request1");
+			addEIC("inVendorReq2", vendorName, "Vendor_Request2");
 			addEIC("inVendorProd1", vendorName, "Product_Input");
 			addEIC("inVendorProd2", vendorName, "Product_Input");
 			
 			// Connect the outputs of the coupled model with the outputs of some atomic model
-			addEOC(vendorName, "Message_Vendor", "outVendorReq1");
-			addEOC(vendorName, "Message_Vendor", "outVendorReq2");
-			addEOC(vendorName, "Product_to_Vendor", "outVendorProd1");
-			addEOC(vendorName, "Product_to_Vendor", "outVendorProd2");
+			addEOC(vendorName, "Message_Vendor1", "outVendorReq1");
+			addEOC(vendorName, "Message_Vendor2", "outVendorReq2");
+			addEOC(vendorName, "Product_to_Vendor1", "outVendorProd1");
+			addEOC(vendorName, "Product_to_Vendor2", "outVendorProd2");
         }
     };
 } // namespace cadmium::assignment1

@@ -7,6 +7,8 @@
 #include <iostream>
 #include <limits>
 #include <assert.h>
+#include <random>
+#include <chrono>
 
 using namespace std;
 
@@ -60,9 +62,10 @@ namespace cadmium::vendor_Space {
 		int money_received;
 		int products_requested;
 		bool vendor_or_customer;
+		bool vendor1_or_vendor2;
 
 		// Set the default values for the state constructor for this specific model
-		VendorState(): sigma(0), ___current_state___(Vendor_States::Idle), stock(0), money_received(0), products_requested(0), vendor_or_customer(false){};
+		VendorState(): sigma(0), ___current_state___(Vendor_States::Idle), stock(0), money_received(0), products_requested(0), vendor_or_customer(false), vendor1_or_vendor2(false){};
 	};
 
 	std::ostream& operator<<(std::ostream &out, const VendorState& state) {
@@ -86,13 +89,16 @@ namespace cadmium::vendor_Space {
 			// Declare ports for the model
 
 			Port<int> Customer_Request;
-        	Port<int> Vendor_Request;
+        	Port<int> Vendor_Request1;
+			Port<int> Vendor_Request2;
         	Port<int> Money_Input;
 			Port<int> Product_Input;
         	Port<int> Message_Customer;
-       	 	Port<int> Message_Vendor;
+       	 	Port<int> Message_Vendor1;
+			Port<int> Message_Vendor2;
        	 	Port<int> Product_to_Customer;
-        	Port<int> Product_to_Vendor;
+        	Port<int> Product_to_Vendor1;
+			Port<int> Product_to_Vendor2;
 
 			// Declare variables for the model's behaviour
 			int check_stock = 5;
@@ -110,13 +116,16 @@ namespace cadmium::vendor_Space {
 
 				// Initialize ports for the model
 				Customer_Request = addInPort<int>("Customer_Request");
-				Vendor_Request = addInPort<int>("Vendor_Request");
+				Vendor_Request1 = addInPort<int>("Vendor_Request1");
+				Vendor_Request2 = addInPort<int>("Vendor_Request2");
 				Money_Input = addInPort<int>("Money_Input");
 				Product_Input = addInPort<int>("Product_Input");
 				Message_Customer = addOutPort<int>("Message_Customer");
-				Message_Vendor = addOutPort<int>("Message_Vendor");
+				Message_Vendor1 = addOutPort<int>("Message_Vendor1");
+				Message_Vendor2 = addOutPort<int>("Message_Vendor2");
 				Product_to_Customer = addOutPort<int>("Product_to_Customer");
-				Product_to_Vendor = addOutPort<int>("Product_to_Vendor");
+				Product_to_Vendor1 = addOutPort<int>("Product_to_Vendor1");
+				Product_to_Vendor2 = addOutPort<int>("Product_to_Vendor2");
 
 				// Initialize variables for the model's behaviour
 				state.___current_state___ = Vendor_States::Idle; //Initial state is Idle
@@ -216,17 +225,35 @@ namespace cadmium::vendor_Space {
 					}
 
 					// First check if there are un-handled inputs for the "Customer_Request" port
-					if(!Vendor_Request->empty()){
+					if(!Vendor_Request1->empty()){
 
 						// The variable x is created to handle the external input values in sequence.
 						// The getBag() function is used to get the next input value.
-						for( const auto x : Vendor_Request->getBag()){
+						for( const auto x : Vendor_Request1->getBag()){
 							if (x > 0){
 								state.products_requested = x;
 							} else {
 								assert(("Must be greater than 0 products requested", false));
 							}
 							state.___current_state___ = Vendor_States::Sending_Product;
+							state.vendor1_or_vendor2 = true;
+							state.sigma = 1;
+						}
+
+					}
+
+					if(!Vendor_Request2->empty()){
+
+						// The variable x is created to handle the external input values in sequence.
+						// The getBag() function is used to get the next input value.
+						for( const auto x : Vendor_Request2->getBag()){
+							if (x > 0){
+								state.products_requested = x;
+							} else {
+								assert(("Must be greater than 0 products requested", false));
+							}
+							state.___current_state___ = Vendor_States::Sending_Product;
+							state.vendor1_or_vendor2 = false;
 							state.sigma = 1;
 						}
 
@@ -286,8 +313,10 @@ namespace cadmium::vendor_Space {
 						Message_Customer->addMessage(0);
 						break;
 					case Vendor_States::Checking_Stock:
-						if (state.vendor_or_customer){
-							Product_to_Vendor->addMessage(1);
+						if ((state.vendor_or_customer)&&(state.vendor1_or_vendor2)){
+							Product_to_Vendor1->addMessage(1);
+						} else if ((state.vendor_or_customer)&&(!state.vendor1_or_vendor2)){
+							Product_to_Vendor2->addMessage(1);
 						} else {
 							Product_to_Customer->addMessage(1);
 						}
@@ -296,7 +325,14 @@ namespace cadmium::vendor_Space {
 						break;
 					case Vendor_States::Idle:
 						if (state.stock <= check_stock){
-							Message_Vendor->addMessage(1);
+							unsigned seed1 = chrono::system_clock::now().time_since_epoch().count();
+							minstd_rand0 generator(seed1);
+							uniform_int_distribution<> probDist(1,100);
+							if (probDist(generator) >= 51){
+								Message_Vendor1->addMessage(1);
+							} else {
+								Message_Vendor2->addMessage(1);
+							}
 						}
 						break;
 					case Vendor_States::Requesting_Money:

@@ -21,11 +21,24 @@ namespace cadmium::vendor_Space {
         public:
         Top_model(const std::string& id): Coupled(id){
 
-			// Declare the models
-			shared_ptr<VCCoupled> VC = addComponent<VCCoupled>("vendor", 1, 10);
-			
-            // Connect the models with coupling
-			
+
+            vector<shared_ptr<VCCoupled>> VCs;
+            VCs.push_back(addComponent<VCCoupled>("VC"+to_string(1), 1, 10));
+            int count = 1;
+            for (int i = 2; i <= 4; i++){
+                for (int j = 1; j <= i; j++){
+                    VCs.push_back(addComponent<VCCoupled>("VC"+to_string(count+j), count+j, 10));
+                    if (j > 1){
+                        addCoupling(VCs[count+j-1]->outVendorProd1, VCs[count+j-i-1]->inVendorProd2);
+                        addCoupling(VCs[count+j-i-1]->outVendorReq2, VCs[count+j-1]->inVendorReq1);
+                    } 
+                    if (j < i){
+                        addCoupling(VCs[count+j-1]->outVendorProd2, VCs[count+j-i]->inVendorProd1);
+                        addCoupling(VCs[count+j-i]->outVendorReq1, VCs[count+j-1]->inVendorReq1);
+                    }
+                }
+                count+=i;
+            }
         }
     };
 } // namespace cadmium::vendor_Space
