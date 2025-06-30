@@ -22,4 +22,4 @@ Ex: ./bin/main.out 3 25
 This example will create a vendors tree of depth 3 where each VC starts with 25 units in their stock.
 
 ## Plans for the Future
--A python program to generate a graph mapping the state sequences of every simulation
+-A python program to generate a graph mapping the state sequences of every simulation's model
