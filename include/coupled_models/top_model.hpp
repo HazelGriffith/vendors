@@ -25,7 +25,7 @@ namespace cadmium::vendor_Space {
             vector<shared_ptr<VCCoupled>> VCs;
             VCs.push_back(addComponent<VCCoupled>("VC"+to_string(1), 1, 10));
             int count = 1;
-            for (int i = 2; i <= 4; i++){
+            for (int i = 2; i <= 2; i++){
                 for (int j = 1; j <= i; j++){
                     VCs.push_back(addComponent<VCCoupled>("VC"+to_string(count+j), count+j, 10));
                     if (j > 1){

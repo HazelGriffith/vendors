@@ -61,11 +61,10 @@ namespace cadmium::vendor_Space {
 		int stock;
 		int money_received;
 		int products_requested;
-		bool vendor_or_customer;
 		bool vendor1_or_vendor2;
 
 		// Set the default values for the state constructor for this specific model
-		VendorState(): sigma(0), ___current_state___(Vendor_States::Idle), stock(0), money_received(0), products_requested(0), vendor_or_customer(false), vendor1_or_vendor2(false){};
+		VendorState(): sigma(0), ___current_state___(Vendor_States::Idle), stock(0), money_received(0), products_requested(0), vendor1_or_vendor2(false){};
 	};
 
 	std::ostream& operator<<(std::ostream &out, const VendorState& state) {
@@ -75,7 +74,7 @@ namespace cadmium::vendor_Space {
     	out << "[-|~:stock:~|-]" << state.stock << "[-|~:stock:~|-]";
 		out << "[-|~:products_requested:~|-]" << state.products_requested << "[-|~:products_requested:~|-]";
     	out << "[-|~:money_received:~|-]" << state.money_received << "[-|~:money_received:~|-]";
-		out << "[-|~:vendor_or_customer~|-]" << state.vendor_or_customer << "[-|~:vendor_or_customer:~|-]";
+		out << "[-|~:vendor1_or_vendor2~|-]" << state.vendor1_or_vendor2 << "[-|~:vendor1_or_vendor2:~|-]";
 
     	return out;
 	}
@@ -160,7 +159,6 @@ namespace cadmium::vendor_Space {
 						if (state.stock > 0){
 							state.stock--;
 							state.___current_state___ = Vendor_States::Checking_Stock;
-							state.vendor_or_customer = false;
 						}
 						// DEADLOCK
 						break;
@@ -172,11 +170,12 @@ namespace cadmium::vendor_Space {
 						if (state.stock > 0){
 							state.stock--;
 							state.___current_state___ = Vendor_States::Checking_Stock;
-							state.vendor_or_customer = true;
 						}
 						// DEADLOCK
 						break;
 					case Vendor_States::Idle:
+						state.products_requested = 0;
+						state.sigma = numeric_limits<double>::infinity();
 						// Passive
 						break;
 					case Vendor_States::Requesting_Money:
@@ -207,22 +206,6 @@ namespace cadmium::vendor_Space {
 			void externalTransition(VendorState& state, double e) const override {
 
 				if (state.___current_state___ == Vendor_States::Idle){
-					// First check if there are un-handled inputs for the "Customer_Request" port
-					if(!Customer_Request->empty()){
-
-						// The variable x is created to handle the external input values in sequence.
-						// The getBag() function is used to get the next input value.
-						for( const auto x : Customer_Request->getBag()){
-							if (x > 0){
-								state.products_requested = x;
-							} else {
-								assert(("Must be greater than 0 products requested", false));
-							}
-							state.___current_state___ = Vendor_States::Requesting_Money;
-							state.sigma = 1;
-						}
-
-					}
 
 					// First check if there are un-handled inputs for the "Customer_Request" port
 					if(!Vendor_Request1->empty()){
@@ -240,9 +223,7 @@ namespace cadmium::vendor_Space {
 							state.sigma = 1;
 						}
 
-					}
-
-					if(!Vendor_Request2->empty()){
+					} else if(!Vendor_Request2->empty()){
 
 						// The variable x is created to handle the external input values in sequence.
 						// The getBag() function is used to get the next input value.
@@ -257,10 +238,22 @@ namespace cadmium::vendor_Space {
 							state.sigma = 1;
 						}
 
-					}
-				}
+					} else if(!Customer_Request->empty()){
 
-				if (state.___current_state___ == Vendor_States::Requesting_Money){
+						// The variable x is created to handle the external input values in sequence.
+						// The getBag() function is used to get the next input value.
+						for( const auto x : Customer_Request->getBag()){
+							if (x > 0){
+								state.products_requested = x;
+							} else {
+								assert(("Must be greater than 0 products requested", false));
+							}
+							state.___current_state___ = Vendor_States::Requesting_Money;
+							state.sigma = 1;
+						}
+
+					}
+				} else if (state.___current_state___ == Vendor_States::Requesting_Money){
 					// First check if there are un-handled inputs for the "Customer_Request" port
 					if(!Money_Input->empty()){
 
@@ -297,6 +290,16 @@ namespace cadmium::vendor_Space {
 			}
 
 			/**
+			 * void confluentTransition(double e) override {
+				this->internalTransition(state);
+				this->output(state);
+				this->externalTransition(state,e);
+			}
+			 */
+			
+			
+
+			/**
 			 * This function outputs any desired state values to their associated ports.
 			 *
 			 * In this model, the value of state.lightOn is sent via the out port.  Once
@@ -308,32 +311,42 @@ namespace cadmium::vendor_Space {
 			void output(const VendorState& state) const override {
 				switch(state.___current_state___){
 					case Vendor_States::Checking_Money:
-						break;
-					case Vendor_States::Vending:
-						Message_Customer->addMessage(0);
-						break;
-					case Vendor_States::Checking_Stock:
-						if ((state.vendor_or_customer)&&(state.vendor1_or_vendor2)){
-							Product_to_Vendor1->addMessage(1);
-						} else if ((state.vendor_or_customer)&&(!state.vendor1_or_vendor2)){
-							Product_to_Vendor2->addMessage(1);
+						if (state.money_received < cost){
+							Message_Customer->addMessage(cost-state.money_received);
 						} else {
-							Product_to_Customer->addMessage(1);
+							Message_Customer->addMessage(0);
 						}
 						break;
-					case Vendor_States::Sending_Product:
+					case Vendor_States::Vending:
+						if (state.stock > 0){
+							Product_to_Customer->addMessage(state.products_requested);
+						}
 						break;
-					case Vendor_States::Idle:
+					case Vendor_States::Checking_Stock:
 						if (state.stock <= check_stock){
 							unsigned seed1 = chrono::system_clock::now().time_since_epoch().count();
 							minstd_rand0 generator(seed1);
 							uniform_int_distribution<> probDist(1,100);
-							if (probDist(generator) >= 51){
+							int prob = probDist(generator);
+							if (prob >= 51){
 								Message_Vendor1->addMessage(1);
 							} else {
 								Message_Vendor2->addMessage(1);
 							}
 						}
+						
+						break;
+					case Vendor_States::Sending_Product:
+						if (state.stock > 0){
+							if (state.vendor1_or_vendor2){
+								Product_to_Vendor1->addMessage(state.products_requested);
+							} else {
+								Product_to_Vendor2->addMessage(state.products_requested);
+							}
+						}
+						break;
+					case Vendor_States::Idle:
+						
 						break;
 					case Vendor_States::Requesting_Money:
 						Message_Customer->addMessage(cost-state.money_received);

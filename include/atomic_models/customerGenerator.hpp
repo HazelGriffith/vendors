@@ -7,6 +7,8 @@
 #include <iostream>
 #include <limits>
 #include <assert.h>
+#include <random>
+#include <chrono>
 
 using namespace std;
 
@@ -15,7 +17,6 @@ namespace cadmium::vendor_Space {
 	//enum for representing the states
 	enum class Customer_States {    
 	Sending_Request,
-	Acknowledged,
 	Send_Money
 	}; //end of the enum
 
@@ -25,9 +26,6 @@ namespace cadmium::vendor_Space {
 		switch (state) {
 			case Customer_States::Sending_Request:
 				return "Sending_Request" ;
-
-			case Customer_States::Acknowledged:
-				return "Acknowledged" ;
 
 			case Customer_States::Send_Money:
 				return "Send_Money" ;
@@ -94,7 +92,10 @@ namespace cadmium::vendor_Space {
 				// Initialize variables for the model's behaviour
 				state.___current_state___ = Customer_States::Sending_Request; //Initial state is Idle
 
-				state.sigma = 5;
+				unsigned seed1 = chrono::system_clock::now().time_since_epoch().count();
+				minstd_rand0 generator(seed1);
+				uniform_int_distribution<> probDist(1,50);
+				state.sigma = probDist(generator);
 				
 			}
 
@@ -107,19 +108,16 @@ namespace cadmium::vendor_Space {
 			 * @param state reference to the current state of the model.
 			 */
 			void internalTransition(CustomerState& state) const override {
+				unsigned seed1 = chrono::system_clock::now().time_since_epoch().count();
+				minstd_rand0 generator(seed1);
+				uniform_int_distribution<> probDist(1,10);
 				
 				switch(state.___current_state___){
 					case Customer_States::Sending_Request:
-						state.sigma = 5;
-						// DOES NOT TRANSITION
-						break;
-					case Customer_States::Acknowledged:
-						state.___current_state___ = Customer_States::Send_Money;
-						state.sigma = 1;
+						state.sigma = probDist(generator);
 						break;
 					case Customer_States::Send_Money:
 						state.sigma = numeric_limits<double>::infinity();
-						// DOES NOT TRANSITION
 						break;
 					default:
 						assert(("Not a valid state", false));
@@ -154,14 +152,19 @@ namespace cadmium::vendor_Space {
 						if (state.must_pay == 0){
 							// Enough money received
 							state.___current_state___ = Customer_States::Sending_Request;
+							unsigned seed1 = chrono::system_clock::now().time_since_epoch().count();
+							minstd_rand0 generator(seed1);
+							uniform_int_distribution<> probDist(1,50);
+							state.sigma = probDist(generator);
 							
 						} else if (state.must_pay > 0){
 							// More money needed
-							state.___current_state___ = Customer_States::Acknowledged;
+							state.___current_state___ = Customer_States::Send_Money;
+							state.sigma = 1;
 						} else {
 							assert(("Cannot give negative money", false));
 						}
-						state.sigma = 1;
+						
 					}
 				}
 
@@ -189,8 +192,6 @@ namespace cadmium::vendor_Space {
 				switch(state.___current_state___){
 					case Customer_States::Sending_Request:
 						Purchase_Request->addMessage(1);
-						break;
-					case Customer_States::Acknowledged:
 						break;
 					case Customer_States::Send_Money:
 						if (state.must_pay > 0){

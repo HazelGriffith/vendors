@@ -18,28 +18,14 @@ filepathBase = '../simulation_results/'
 
 filepath = filepathBase + 'results.csv'
 
-numVCs = int(input("Enter the number of VC pairs"))
+numVCs = int(input("Enter the number of VC pairs: "))
 
 simulation_results = pd.read_csv(filepath, header=1)
 
 AllVCSimResults = {}
+
 for i in range(numVCs):
-    VCSimResults = simulation_results.loc[(simulation_results['model_name'] == 'Helo') &
-                                      (simulation_results['port_name'].isnull())]
-    AllVCSimResults.update({"VC"+str(i):VCSimResults})
-
-print(AllVCSimResults)
-'''
-heloRows = simulation_results.loc[(simulation_results['model_name'] == 'Helo') &
-                                  (simulation_results['port_name'].isnull())]
-heloRows = heloRows.reset_index()
-
-dataAndTime = heloRows[['time', 'data']]
-states = dataAndTime['data'].str.extractall('(?P<states>[<].+[>])').reset_index(drop = True)
-
-states = states['states'].str.replace('<', '').str.replace('>', '').str.split(";", expand = True)
-states.columns = heloStates
-statesAndTime = pd.concat([dataAndTime['time'], states], axis=1)
-timeText = 'TIME = '
-time = 0
-'''
+    VCSimResults = simulation_results.loc[(simulation_results['model_name'] == "vendor"+str(i+1))]
+    AllVCSimResults.update({"V"+str(i+1):VCSimResults})
+    VCSimResults = simulation_results.loc[(simulation_results['model_name'] == "customer"+str(i+1))]
+    AllVCSimResults.update({"C"+str(i+1):VCSimResults})
