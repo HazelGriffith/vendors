@@ -19,15 +19,18 @@ using namespace std;
 namespace cadmium::vendor_Space {
     class Top_model : public Coupled {
         public:
-        Top_model(const std::string& id): Coupled(id){
+        Top_model(const std::string& id, int initial_stock, int depth): Coupled(id){
+
+
+
 
 
             vector<shared_ptr<VCCoupled>> VCs;
-            VCs.push_back(addComponent<VCCoupled>("VC"+to_string(1), 1, 10));
+            VCs.push_back(addComponent<VCCoupled>("VC"+to_string(1), 1, initial_stock));
             int count = 1;
-            for (int i = 2; i <= 2; i++){
+            for (int i = 2; i <= depth; i++){
                 for (int j = 1; j <= i; j++){
-                    VCs.push_back(addComponent<VCCoupled>("VC"+to_string(count+j), count+j, 10));
+                    VCs.push_back(addComponent<VCCoupled>("VC"+to_string(count+j), count+j, initial_stock));
                     if (j > 1){
                         addCoupling(VCs[count+j-1]->outVendorProd1, VCs[count+j-i-1]->inVendorProd2);
                         addCoupling(VCs[count+j-i-1]->outVendorReq2, VCs[count+j-1]->inVendorReq1);

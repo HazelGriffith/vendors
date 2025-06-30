@@ -131,6 +131,8 @@ namespace cadmium::vendor_Space {
 				state.stock = initial_stock;
 
 				state.sigma = numeric_limits<double>::infinity();
+
+				check_stock = (int)(initial_stock/2);
 				
 			}
 
