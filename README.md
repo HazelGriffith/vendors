@@ -9,5 +9,4 @@ If you run the executable with "./bin/main.out" it will run the default simulati
 The results.csv file is stored in the simulation_results folder.
 
 ## Plans for the Future
--Multiple vendors working in tandem
 -A python program to generate a graph mapping the state sequences of every simulation
