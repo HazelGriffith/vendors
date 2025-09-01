@@ -62,19 +62,21 @@ namespace cadmium::vendor_Space {
 		int money_received;
 		int products_requested;
 		bool vendor1_or_vendor2;
+		bool customer_or_vendor;
 
 		// Set the default values for the state constructor for this specific model
-		VendorState(): sigma(0), ___current_state___(Vendor_States::Idle), stock(0), money_received(0), products_requested(0), vendor1_or_vendor2(false){};
+		VendorState(): sigma(0), ___current_state___(Vendor_States::Idle), stock(0), money_received(0), products_requested(0), vendor1_or_vendor2(false), customer_or_vendor(false){};
 	};
 
 	std::ostream& operator<<(std::ostream &out, const VendorState& state) {
 		out << "[-|name|-]" << "Vendor" << "[-|name|-]";
     	out << "[-|state|-]" << enumToString(state.___current_state___) << "[-|state|-]";
     	out << "[-|sigma|-]" << state.sigma << "[-|sigma|-]";
-    	out << "[-|~:stock:~|-]" << state.stock << "[-|~:stock:~|-]";
-		out << "[-|~:products_requested:~|-]" << state.products_requested << "[-|~:products_requested:~|-]";
-    	out << "[-|~:money_received:~|-]" << state.money_received << "[-|~:money_received:~|-]";
-		out << "[-|~:vendor1_or_vendor2~|-]" << state.vendor1_or_vendor2 << "[-|~:vendor1_or_vendor2:~|-]";
+    	out << "[-|stock|-]" << state.stock << "[-|stock|-]";
+		out << "[-|products_requested|-]" << state.products_requested << "[-|products_requested|-]";
+    	out << "[-|money_received|-]" << state.money_received << "[-|money_received|-]";
+		out << "[-|vendor1_or_vendor2|-]" << state.vendor1_or_vendor2 << "[-|vendor1_or_vendor2|-]";
+		out << "[-|customer_or_vendor|-]" << state.customer_or_vendor << "[-|customer_or_vendor|-]";
 
     	return out;
 	}
