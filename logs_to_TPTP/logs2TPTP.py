@@ -70,9 +70,6 @@ def build_state_transitions(modeldf):
         state_transitions.append(StateTransition(currStateDict, nextStateDict))
 
     return state_transitions
-        
-    
-    
 
 df = parse_log(filepath)
 
